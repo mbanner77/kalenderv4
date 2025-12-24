@@ -1,5 +1,21 @@
 "use client";
 
-export default function Page() {
-  return <div>No component found</div>;
+import type { Metadata } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Kalender App",
+  description: "Interaktiver Kalender mit Terminverwaltung",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="de">
+      <body>{children}</body>
+    </html>
+  );
 }
