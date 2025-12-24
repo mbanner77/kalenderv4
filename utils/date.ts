@@ -30,6 +30,12 @@ export function addDays(date: Date, days: number): Date {
   return result;
 }
 
+export function addHours(date: Date, hours: number): Date {
+  const result = new Date(date);
+  result.setHours(result.getHours() + hours);
+  return result;
+}
+
 export function addMonths(date: Date, months: number): Date {
   const result = new Date(date);
   result.setMonth(result.getMonth() + months);
@@ -107,6 +113,5 @@ export function getEventPosition(event: { start: Date; end: Date }, dayStart: Da
   };
 }
 
-export function generateId(): string {
-  return Math.random().toString(36).substring(2, 11);
-}
+// GEÄNDERT: Verwendet jetzt sichere ID-Generierung
+export { generateSecureId as generateId } from './security';
