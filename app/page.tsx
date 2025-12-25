@@ -5,136 +5,165 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 export interface CalendarEvent {
   id: string;
   title: string;
-  description?: string;
-  start: string;
-  end: string;
-  allDay?: boolean;
+  description: string;
+  start: Date;
+  end: Date;
+  allDay: boolean;
   color: string;
-  location?: string;
+  location: string;
 }
 
-export type CalendarView = "month" | "week" | "day";
+export type ViewType = "month" | "week" | "day";
 
 interface CalendarContextType {
-  currentDate: Date;
-  setCurrentDate: (date: Date) => void;
-  currentView: CalendarView;
-  setCurrentView: (view: CalendarView) => void;
   events: CalendarEvent[];
-  addEvent: (event: Omit<CalendarEvent, "id">) => void;
-  updateEvent: (id: string, event: Partial<CalendarEvent>) => void;
-  deleteEvent: (id: string) => void;
+  currentDate: Date;
+  view: ViewType;
   selectedEvent: CalendarEvent | null;
-  setSelectedEvent: (event: CalendarEvent | null) => void;
   isModalOpen: boolean;
-  openModal: (event?: CalendarEvent | null) => void;
+  modalMode: "create" | "edit";
+  addEvent: (event: Omit<CalendarEvent, "id">) => void;
+  updateEvent: (event: CalendarEvent) => void;
+  deleteEvent: (id: string) => void;
+  moveEvent: (id: string, newStart: Date, newEnd: Date) => void;
+  setCurrentDate: (date: Date) => void;
+  setView: (view: ViewType) => void;
+  openModal: (mode: "create" | "edit", event?: CalendarEvent, date?: Date) => void;
   closeModal: () => void;
-  draggedEvent: CalendarEvent | null;
-  setDraggedEvent: (event: CalendarEvent | null) => void;
+  goToToday: () => void;
+  goToPrevious: () => void;
+  goToNext: () => void;
+  newEventDate: Date | null;
 }
 
 const CalendarContext = createContext<CalendarContextType | undefined>(undefined);
 
-const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6", "#ec4899"];
-
-const generateId = () => Math.random().toString(36).substring(2, 15);
-
-const defaultEvents: CalendarEvent[] = [
-  {
-    id: "1",
-    title: "Team Meeting",
-    description: "Wöchentliches Standup",
-    start: new Date(new Date().setHours(10, 0, 0, 0)).toISOString(),
-    end: new Date(new Date().setHours(11, 0, 0, 0)).toISOString(),
-    color: "#3b82f6",
-    location: "Konferenzraum A"
-  },
-  {
-    id: "2",
-    title: "Mittagspause",
-    start: new Date(new Date().setHours(12, 0, 0, 0)).toISOString(),
-    end: new Date(new Date().setHours(13, 0, 0, 0)).toISOString(),
-    color: "#22c55e"
-  },
-  {
-    id: "3",
-    title: "Projektabgabe",
-    description: "Deadline für das Q1 Projekt",
-    start: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(),
-    end: new Date(new Date().setDate(new Date().getDate() + 2)).toISOString(),
-    allDay: true,
-    color: "#ef4444"
-  }
+const EVENT_COLORS = [
+  "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4"
 ];
 
+function generateId(): string {
+  return Math.random().toString(36).substring(2, 15);
+}
+
 export default function Page({ children }: { children: ReactNode }) {
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [currentView, setCurrentView] = useState<CalendarView>("month");
-  const [events, setEvents] = useState<CalendarEvent[]>(defaultEvents);
+  const [view, setView] = useState<ViewType>("month");
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
+  const [modalMode, setModalMode] = useState<"create" | "edit">("create");
+  const [newEventDate, setNewEventDate] = useState<Date | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("calendar-events");
     if (saved) {
-      try {
-        setEvents(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to load events", e);
-      }
+      const parsed = JSON.parse(saved);
+      setEvents(parsed.map((e: any) => ({
+        ...e,
+        start: new Date(e.start),
+        end: new Date(e.end)
+      })));
+    } else {
+      const today = new Date();
+      const sampleEvents: CalendarEvent[] = [
+        {
+          id: generateId(),
+          title: "Team Meeting",
+          description: "Weekly sync with the team",
+          start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0),
+          end: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 0),
+          allDay: false,
+          color: "#3b82f6",
+          location: "Conference Room A"
+        },
+        {
+          id: generateId(),
+          title: "Project Deadline",
+          description: "Submit final deliverables",
+          start: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3, 0, 0),
+          end: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3, 23, 59),
+          allDay: true,
+          color: "#ef4444",
+          location: ""
+        },
+        {
+          id: generateId(),
+          title: "Lunch with Client",
+          description: "Discuss new requirements",
+          start: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 12, 30),
+          end: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 14, 0),
+          allDay: false,
+          color: "#10b981",
+          location: "Downtown Restaurant"
+        }
+      ];
+      setEvents(sampleEvents);
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("calendar-events", JSON.stringify(events));
+    if (events.length > 0) {
+      localStorage.setItem("calendar-events", JSON.stringify(events));
+    }
   }, [events]);
 
   const addEvent = (event: Omit<CalendarEvent, "id">) => {
     const newEvent = { ...event, id: generateId() };
-    setEvents((prev) => [...prev, newEvent]);
+    setEvents(prev => [...prev, newEvent]);
   };
 
-  const updateEvent = (id: string, updates: Partial<CalendarEvent>) => {
-    setEvents((prev) =>
-      prev.map((event) => (event.id === id ? { ...event, ...updates } : event))
-    );
+  const updateEvent = (event: CalendarEvent) => {
+    setEvents(prev => prev.map(e => e.id === event.id ? event : e));
   };
 
   const deleteEvent = (id: string) => {
-    setEvents((prev) => prev.filter((event) => event.id !== id));
+    setEvents(prev => prev.filter(e => e.id !== id));
   };
 
-  const openModal = (event?: CalendarEvent | null) => {
+  const moveEvent = (id: string, newStart: Date, newEnd: Date) => {
+    setEvents(prev => prev.map(e => 
+      e.id === id ? { ...e, start: newStart, end: newEnd } : e
+    ));
+  };
+
+  const openModal = (mode: "create" | "edit", event?: CalendarEvent, date?: Date) => {
+    setModalMode(mode);
     setSelectedEvent(event || null);
+    setNewEventDate(date || null);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
-    setSelectedEvent(null);
     setIsModalOpen(false);
+    setSelectedEvent(null);
+    setNewEventDate(null);
+  };
+
+  const goToToday = () => setCurrentDate(new Date());
+
+  const goToPrevious = () => {
+    const newDate = new Date(currentDate);
+    if (view === "month") newDate.setMonth(newDate.getMonth() - 1);
+    else if (view === "week") newDate.setDate(newDate.getDate() - 7);
+    else newDate.setDate(newDate.getDate() - 1);
+    setCurrentDate(newDate);
+  };
+
+  const goToNext = () => {
+    const newDate = new Date(currentDate);
+    if (view === "month") newDate.setMonth(newDate.getMonth() + 1);
+    else if (view === "week") newDate.setDate(newDate.getDate() + 7);
+    else newDate.setDate(newDate.getDate() + 1);
+    setCurrentDate(newDate);
   };
 
   return (
-    <CalendarContext.Provider
-      value={{
-        currentDate,
-        setCurrentDate,
-        currentView,
-        setCurrentView,
-        events,
-        addEvent,
-        updateEvent,
-        deleteEvent,
-        selectedEvent,
-        setSelectedEvent,
-        isModalOpen,
-        openModal,
-        closeModal,
-        draggedEvent,
-        setDraggedEvent
-      }}
-    >
+    <CalendarContext.Provider value={{
+      events, currentDate, view, selectedEvent, isModalOpen, modalMode, newEventDate,
+      addEvent, updateEvent, deleteEvent, moveEvent, setCurrentDate, setView,
+      openModal, closeModal, goToToday, goToPrevious, goToNext
+    }}>
       {children}
     </CalendarContext.Provider>
   );
@@ -142,10 +171,8 @@ export default function Page({ children }: { children: ReactNode }) {
 
 export default function Page() {
   const context = useContext(CalendarContext);
-  if (!context) {
-    throw new Error("useCalendar must be used within CalendarProvider");
-  }
+  if (!context) throw new Error("useCalendar must be used within CalendarProvider");
   return context;
 }
 
-export { COLORS };
+export { EVENT_COLORS };
