@@ -7,13 +7,18 @@ function generateDates(days: number): string[] {
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    dates.push(date.toISOString().split("T"));
+    // Nur das Datums-Teil (YYYY-MM-DD) verwenden
+    dates.push(date.toISOString().split("T")[0]);
   }
 
   return dates;
 }
 
-function generateTrendData(dates: string[], baseValue: number, volatility: number): { date: string; value: number }[] {
+function generateTrendData(
+  dates: string[],
+  baseValue: number,
+  volatility: number
+): { date: string; value: number }[] {
   let currentValue = baseValue;
 
   return dates.map((date) => {
@@ -34,8 +39,8 @@ const fullOrdersData = generateTrendData(allDates, 300, 50);
 const fullConversionData = generateTrendData(allDates, 35, 5);
 
 export function getFilteredData(dateRange: DateRange): DashboardData {
-  const startStr = dateRange.startDate.toISOString().split("T");
-  const endStr = dateRange.endDate.toISOString().split("T");
+  const startStr = dateRange.startDate.toISOString().split("T")[0];
+  const endStr = dateRange.endDate.toISOString().split("T")[0];
 
   const filterByRange = (data: { date: string; value: number }[]) => {
     return data.filter((d) => d.date >= startStr && d.date <= endStr);
@@ -46,11 +51,14 @@ export function getFilteredData(dateRange: DateRange): DashboardData {
   const filteredOrders = filterByRange(fullOrdersData);
   const filteredConversion = filterByRange(fullConversionData);
 
-  const sumValues = (data: { value: number }[]) => data.reduce((sum, d) => sum + d.value, 0);
-  const avgValues = (data: { value: number }[]) => (data.length > 0 ? sumValues(data) / data.length : 0);
+  const sumValues = (data: { value: number }[]) =>
+    data.reduce((sum, d) => sum + d.value, 0);
+  const avgValues = (data: { value: number }[]) =>
+    data.length > 0 ? sumValues(data) / data.length : 0;
 
   const periodLength = filteredRevenue.length;
-  const prevStartIndex = Math.max(0, fullRevenueData.findIndex((d) => d.date === startStr) - periodLength);
+  const currentIndex = fullRevenueData.findIndex((d) => d.date === startStr);
+  const prevStartIndex = Math.max(0, currentIndex - periodLength);
   const prevEndIndex = prevStartIndex + periodLength;
 
   const prevRevenue = fullRevenueData.slice(prevStartIndex, prevEndIndex);
@@ -59,24 +67,52 @@ export function getFilteredData(dateRange: DateRange): DashboardData {
   const prevConversion = fullConversionData.slice(prevStartIndex, prevEndIndex);
 
   const categories = ["Produkte", "Services", "Abonnements", "Beratung", "Support"];
+  const totalRevenue = sumValues(filteredRevenue);
+
   const barChartData = categories.map((name, index) => ({
     name,
-    value: Math.round(sumValues(filteredRevenue) * (0.35 - index * 0.05) * (0.8 + Math.random() * 0.4)),
+    value: Math.round(
+      totalRevenue *
+        (0.35 - index * 0.05) *
+        (0.8 + Math.random() * 0.4)
+    ),
     color: ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"][index],
   }));
 
-  const pieChartData = [    { name: "Organisch", value: 35 + Math.round(Math.random() * 10), color: "#6366f1" },
-    { name: "Direkt", value: 25 + Math.round(Math.random() * 10), color: "#22c55e" },
-    { name: "Social Media", value: 20 + Math.round(Math.random() * 5), color: "#f59e0b" },
-    { name: "Referral", value: 12 + Math.round(Math.random() * 5), color: "#ef4444" },
-    { name: "Email", value: 8 + Math.round(Math.random() * 5), color: "#8b5cf6" },
+  const pieChartData = [
+    {
+      name: "Organisch",
+      value: 35 + Math.round(Math.random() * 10),
+      color: "#6366f1",
+    },
+    {
+      name: "Direkt",
+      value: 25 + Math.round(Math.random() * 10),
+      color: "#22c55e",
+    },
+    {
+      name: "Social Media",
+      value: 20 + Math.round(Math.random() * 5),
+      color: "#f59e0b",
+    },
+    {
+      name: "Referral",
+      value: 12 + Math.round(Math.random() * 5),
+      color: "#ef4444",
+    },
+    {
+      name: "Email",
+      value: 8 + Math.round(Math.random() * 5),
+      color: "#8b5cf6",
+    },
   ];
 
   return {
-    kpis: [      {
+    kpis: [
+      {
         id: "revenue",
         title: "Umsatz",
-        value: sumValues(filteredRevenue),
+        value: totalRevenue,
         previousValue: sumValues(prevRevenue),
         format: "currency",
         icon: "revenue",
@@ -106,7 +142,8 @@ export function getFilteredData(dateRange: DateRange): DashboardData {
         icon: "conversion",
       },
     ],
-    lineChartData: [      {
+    lineChartData: [
+      {
         name: "Umsatz",
         data: filteredRevenue,
         color: "#6366f1",

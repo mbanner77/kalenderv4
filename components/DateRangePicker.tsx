@@ -51,7 +51,8 @@ const presets: Record<PresetKey, Preset> = {
 };
 
 function formatDateForInput(date: Date): string {
-  return date.toISOString().split("T");
+  // YYYY-MM-DD für <input type="date" />
+  return date.toISOString().split("T")[0];
 }
 
 export function DateRangePicker({ dateRange, onChange }: DateRangePickerProps) {
@@ -87,7 +88,9 @@ export function DateRangePicker({ dateRange, onChange }: DateRangePickerProps) {
               key={key}
               onClick={() => handlePresetClick(key)}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                activePreset === key ? "bg-indigo-500 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                activePreset === key
+                  ? "bg-indigo-500 text-white"
+                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
               }`}
             >
               {presets[key].label}
