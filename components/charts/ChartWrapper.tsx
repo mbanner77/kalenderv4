@@ -6,10 +6,11 @@ interface ChartWrapperProps {
 
 export function ChartWrapper({ title, subtitle, children }: ChartWrapperProps) {
   return (
-    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+    // GEÄNDERT: Styles an Slate-Theme angepasst
+    <div className="bg-slate-900/60 backdrop-blur rounded-xl p-4 lg:p-6 border border-slate-800">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
-        {subtitle && <p className="text-gray-400 text-sm mt-1">{subtitle}</p>}
+        <h3 className="text-sm lg:text-base font-semibold text-slate-100">{title}</h3>
+        {subtitle && <p className="text-xs lg:text-sm text-slate-400 mt-1">{subtitle}</p>}
       </div>
       <div className="h-64">{children}</div>
     </div>

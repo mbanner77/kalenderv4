@@ -55,28 +55,38 @@ export function PieChartCard({ title, subtitle, data }: PieChartCardProps) {
                 <title>{`${segment.name}: ${segment.percentage.toFixed(1)}%`}</title>
               </path>
             ))}
-            {/* Center Circle for Donut Effect */}
-            <circle cx="50" cy="50" r="25" fill="#1f2937" />
+            {/* GEÄNDERT: Donut-Center auf Slate-Theme */}
+            <circle cx="50" cy="50" r="25" fill="#0f172a" />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-xl font-bold text-white">{totalValue.toLocaleString()}</div>
-              <div className="text-xs text-gray-400">Gesamt</div>
+              <div className="text-xl font-bold text-slate-100">
+                {totalValue.toLocaleString()}
+              </div>
+              {/* GEÄNDERT: Center-Label-Farbe auf Slate-Theme */}
+              <div className="text-xs text-slate-400">Gesamt</div>
             </div>
           </div>
         </div>
 
-        {/* Legend */}
+        {/* GEÄNDERT: Legend-Farben auf Slate-Theme */}
         <div className="flex-1 space-y-2">
           {segments.map((segment, i) => (
             <div key={i} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: segment.color }} />
-                <span className="text-sm text-gray-300">{segment.name}</span>
+                <div
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: segment.color }}
+                />
+                <span className="text-sm text-slate-200">{segment.name}</span>
               </div>
               <div className="text-right">
-                <span className="text-sm font-medium text-white">{segment.percentage.toFixed(1)}%</span>
-                <span className="text-xs text-gray-500 ml-2">({segment.value.toLocaleString()})</span>
+                <span className="text-sm font-medium text-slate-100">
+                  {segment.percentage.toFixed(1)}%
+                </span>
+                <span className="text-xs text-slate-500 ml-2">
+                  ({segment.value.toLocaleString()})
+                </span>
               </div>
             </div>
           ))}
