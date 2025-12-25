@@ -41,6 +41,10 @@ export function EventItem({
         whiteSpace: 'nowrap',
         boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
         transition: 'transform 0.1s, box-shadow 0.1s',
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        borderRadius: '6px',
         ...style
       }}
       onMouseEnter={(e) => {
