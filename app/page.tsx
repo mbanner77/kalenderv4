@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { DateRange } from "@/components/DateRangePicker";
+import { DateRangePicker } from "@/components/DateRangePicker";
 import { KpiGrid } from "@/components/KpiGrid";
 import { LineChartCard } from "@/components/charts/LineChartCard";
 import { BarChartCard } from "@/components/charts/BarChartCard";
 import { PieChartCard } from "@/components/charts/PieChartCard";
-import { getFilteredData, getKpiData } from "@/lib/data";
+import { getFilteredData, getKpiData, DateRangeType } from "@/lib/data";
 
 export default function Page() {
   const [dateRange, setDateRange] = useState({
-    type: "last30days",
+    type: "last30days" as DateRangeType,
     label: "Letzte 30 Tage"
   });
 
@@ -30,6 +30,7 @@ export default function Page() {
                   Echtzeit-Einblick in Umsatz, Nutzer und Performance
                 </p>
               </div>
+              <DateRangePicker value={dateRange} onChange={setDateRange} />
               <div className="flex items-center gap-2 text-xs">
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-300 px-3 py-1 border border-emerald-500/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

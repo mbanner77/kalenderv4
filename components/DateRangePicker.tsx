@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { DateRangeType } from "@/lib/data";
+import type { DateRangeType } from "@/lib/data";
 
 export interface DateRange {
   type: DateRangeType;
