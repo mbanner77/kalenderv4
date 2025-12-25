@@ -13,7 +13,7 @@ interface PieChartCardProps {
 }
 
 export function PieChartCard({ title, subtitle, data }: PieChartCardProps) {
-  const total = data.reduce((sum, d) => sum + d.value, 0);
+  const total = data.reduce((sum, d) => sum + d.value, 0) || 1;
   let currentAngle = -90;
 
   const segments = data.map((d) => {
@@ -37,6 +37,8 @@ export function PieChartCard({ title, subtitle, data }: PieChartCardProps) {
     return { ...d, percentage, pathD };
   });
 
+  const totalValue = data.reduce((s, d) => s + d.value, 0);
+
   return (
     <ChartWrapper title={title} subtitle={subtitle}>
       <div className="h-full flex items-center gap-6">
@@ -58,7 +60,7 @@ export function PieChartCard({ title, subtitle, data }: PieChartCardProps) {
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-xl font-bold text-white">{total.toLocaleString()}</div>
+              <div className="text-xl font-bold text-white">{totalValue.toLocaleString()}</div>
               <div className="text-xs text-gray-400">Gesamt</div>
             </div>
           </div>

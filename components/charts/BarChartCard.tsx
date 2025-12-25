@@ -17,7 +17,7 @@ interface BarChartCardProps {
 
 export function BarChartCard({ title, subtitle, data, dataKey, xAxisKey, color, horizontal = false, formatValue = (v) => String(v) }: BarChartCardProps) {
   const values = data.map((d) => Number(d[dataKey]));
-  const maxValue = Math.max(...values);
+  const maxValue = Math.max(...values) || 1;
 
   if (horizontal) {
     return (

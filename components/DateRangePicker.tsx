@@ -13,8 +13,7 @@ interface DateRangePickerProps {
   onChange: (range: DateRange) => void;
 }
 
-const presetRanges: DateRange[] = [
-  { type: "today", label: "Heute" },
+const presetRanges: DateRange[] = [  { type: "today", label: "Heute" },
   { type: "last7days", label: "Letzte 7 Tage" },
   { type: "last30days", label: "Letzte 30 Tage" },
   { type: "last90days", label: "Letzte 90 Tage" },
