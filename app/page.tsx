@@ -1,13 +1,11 @@
 "use client";
 
-import React from "react";
-import { CalendarProvider } from "@/components/CalendarContext";
-import { CalendarLayout } from "@/components/CalendarLayout";
+import { CalendarShell } from "@/components/CalendarShell";
 
-export default function Page() {
+export default function Page(): JSX.Element {
   return (
-    <CalendarProvider>
-      <CalendarLayout />
-    </CalendarProvider>
+    <main className="min-h-screen p-4 md:p-8">
+      <CalendarShell />
+    </main>
   );
 }
