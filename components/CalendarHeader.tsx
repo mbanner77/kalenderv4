@@ -1,139 +1,78 @@
-import { ViewType } from '../types/calendar';
-import { MONTHS, formatDate, formatWeekRange } from '../lib/dateUtils';
+"use client";
 
-interface CalendarHeaderProps {
-  currentDate: Date;
-  view: ViewType;
-  onPrev: () => void;
-  onNext: () => void;
-  onToday: () => void;
-  onViewChange: (view: ViewType) => void;
-  onAddEvent: () => void;
-}
+import { useCalendar } from "./CalendarContext";
+import { ViewType } from "./types";
+import { addMonths, addWeeks, addDays } from "./utils";
 
-export function CalendarHeader({
-  currentDate,
-  view,
-  onPrev,
-  onNext,
-  onToday,
-  onViewChange,
-  onAddEvent
-}: CalendarHeaderProps) {
-  const getTitle = () => {
+export function CalendarHeader() {
+  const { currentDate, setCurrentDate, view, setView } = useCalendar();
+
+  const navigate = (direction: number) => {
     switch (view) {
-      case 'month':
-        return `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-      case 'week':
-        return formatWeekRange(currentDate);
-      case 'day':
-        return formatDate(currentDate);
-      default:
-        return '';
+      case "month":
+        setCurrentDate(addMonths(currentDate, direction));
+        break;
+      case "week":
+        setCurrentDate(addWeeks(currentDate, direction));
+        break;
+      case "day":
+        setCurrentDate(addDays(currentDate, direction));
+        break;
     }
   };
 
+  const goToToday = () => setCurrentDate(new Date());
+
+  const getTitle = () => {
+    const options: Intl.DateTimeFormatOptions = view === "month"
+      ? { month: "long", year: "numeric" }
+      : view === "week"
+        ? { month: "short", year: "numeric" }
+        : { weekday: "long", day: "numeric", month: "long", year: "numeric" };
+    return currentDate.toLocaleDateString("de-DE", options);
+  };
+
+  const views: ViewType[] = ["month", "week", "day"];
+  const viewLabels = { month: "Monat", week: "Woche", day: "Tag" };
+
   return (
-    <header style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '16px 24px',
-      background: '#1e1e2e',
-      borderBottom: '1px solid #313244',
-      flexWrap: 'wrap',
-      gap: '12px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <header className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-gray-800 rounded-xl mb-4">
+      <div className="flex items-center gap-2">
         <button
-          onClick={onAddEvent}
-          style={{
-            padding: '10px 20px',
-            background: '#6366f1',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600',
-            fontSize: '14px'
-          }}
+          onClick={goToToday}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors"
         >
-          + Neuer Termin
+          Heute
         </button>
-        
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <button
-            onClick={onPrev}
-            style={{
-              padding: '8px 12px',
-              background: '#313244',
-              color: '#cdd6f4',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            ←
-          </button>
-          <button
-            onClick={onToday}
-            style={{
-              padding: '8px 16px',
-              background: '#313244',
-              color: '#cdd6f4',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            Heute
-          </button>
-          <button
-            onClick={onNext}
-            style={{
-              padding: '8px 12px',
-              background: '#313244',
-              color: '#cdd6f4',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            →
-          </button>
-        </div>
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          onClick={() => navigate(1)}
+          className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+        <h2 className="text-xl font-semibold ml-4">{getTitle()}</h2>
       </div>
 
-      <h1 style={{
-        fontSize: '20px',
-        fontWeight: '600',
-        color: '#cdd6f4',
-        margin: 0
-      }}>
-        {getTitle()}
-      </h1>
-
-      <div style={{
-        display: 'flex',
-        background: '#313244',
-        borderRadius: '8px',
-        overflow: 'hidden'
-      }}>
-        {(['month', 'week', 'day'] as ViewType[]).map((v) => (
+      <div className="flex bg-gray-700 rounded-lg p-1">
+        {views.map(v => (
           <button
             key={v}
-            onClick={() => onViewChange(v)}
-            style={{
-              padding: '8px 16px',
-              background: view === v ? '#6366f1' : 'transparent',
-              color: view === v ? '#fff' : '#cdd6f4',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '14px',
-              transition: 'all 0.2s'
-            }}
+            onClick={() => setView(v)}
+            className={`px-4 py-2 rounded-md font-medium transition-colors ${
+              view === v ? "bg-indigo-600 text-white" : "text-gray-300 hover:text-white"
+            }`}
           >
-            {v === 'month' ? 'Monat' : v === 'week' ? 'Woche' : 'Tag'}
+            {viewLabels[v]}
           </button>
         ))}
       </div>
