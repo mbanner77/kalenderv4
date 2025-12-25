@@ -1,39 +1,25 @@
 import { useState, useRef, useEffect } from "react";
-import type { DateRangeType } from "../lib/data";
 
-export interface DateRange {
-  type: DateRangeType;
-  label: string;
-  startDate?: Date;
-  endDate?: Date;
-}
-
-interface DateRangePickerProps {
-  value: DateRange;
-  onChange: (range: DateRange) => void;
-}
-
-const presetRanges: DateRange[] = [
-  { type: "today", label: "Heute" },
-  { type: "last7days", label: "7 Tage" },
-  { type: "last30days", label: "30 Tage" },
-  { type: "last90days", label: "90 Tage" },
-  { type: "thisYear", label: "Jahr" },
-];
-
-export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
+export function DateRangePicker({ value, onChange }) {
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const presetRanges = [    { type: "today", label: "Heute" },
+    { type: "last7days", label: "7 Tage" },
+    { type: "last30days", label: "30 Tage" },
+    { type: "last90days", label: "90 Tage" },
+    { type: "thisYear", label: "Jahr" },
+  ];
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -62,8 +48,8 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
                 setIsOpen(false);
               }}
               className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
-                value.type === range.type 
-                  ? "bg-indigo-600 text-white" 
+                value.type === range.type
+                  ? "bg-indigo-600 text-white"
                   : "text-slate-300 hover:bg-slate-700"
               }`}
               role="option"
