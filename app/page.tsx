@@ -1,18 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { CalendarProvider } from "@/components/CalendarContext";
+import { CalendarContainer } from "@/components/CalendarContainer";
 
-export default function Page() {
+export default function Page(): JSX.Element {
   return (
-    <main className="min-h-screen p-8 bg-gray-50">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
-          Willkommen
-        </h1>
-        <p className="text-gray-600">
-          Die App wird generiert. Bitte starte eine neue Generierung.
-        </p>
-      </div>
-    </main>
+    <CalendarProvider>
+      <main className="min-h-screen py-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl font-bold mb-6 text-white">
+            Interaktiver Kalender
+          </h1>
+          <CalendarContainer />
+        </div>
+      </main>
+    </CalendarProvider>
   );
 }
