@@ -1,18 +1,18 @@
 "use client";
 
-import type { ReactElement } from "react";
-import { CalendarProvider } from "@/components/CalendarContext";
-import { CalendarShell } from "@/components/CalendarShell";
+import { useState } from "react";
 
-export default function Page(): ReactElement {
+export default function Page() {
   return (
-    <CalendarProvider>
-      <main className="min-h-screen flex flex-col p-4 sm:p-8">
-        <div className="max-w-6xl w-full mx-auto">
-          <h1 className="text-3xl font-bold mb-4">Interaktiver Kalender</h1>
-          <CalendarShell />
-        </div>
-      </main>
-    </CalendarProvider>
+    <main className="min-h-screen p-8 bg-gray-50">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+          Willkommen
+        </h1>
+        <p className="text-gray-600">
+          Die App wird generiert. Bitte starte eine neue Generierung.
+        </p>
+      </div>
+    </main>
   );
 }
