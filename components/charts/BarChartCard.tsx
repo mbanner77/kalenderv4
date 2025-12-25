@@ -1,103 +1,125 @@
-import { ChartWrapper } from "./ChartWrapper";
-
-interface DataPoint {
-  [key: string]: string | number;
-}
-
 interface BarChartCardProps {
   title: string;
-  subtitle?: string;
-  data: DataPoint[];
-  dataKey: string;
-  xAxisKey: string;
-  color: string;
-  horizontal?: boolean;
-  formatValue?: (value: number) => string;
+  data: { name: string; value: number; color: string }[];
+  height?: number;
 }
 
-export function BarChartCard({
-  title,
-  subtitle,
-  data,
-  dataKey,
-  xAxisKey,
-  color,
-  horizontal = false,
-  formatValue = (v) => String(v),
-}: BarChartCardProps) {
-  const values = data.map((d) => Number(d[dataKey]));
-  const maxValue = Math.max(...values) || 1;
-
-  if (horizontal) {
+export function BarChartCard({ title, data, height = 300 }: BarChartCardProps) {
+  if (!data.length) {
     return (
-      <ChartWrapper title={title} subtitle={subtitle}>
-        <div className="h-full flex flex-col justify-between">
-          {data.map((d, i) => {
-            const percentage = (Number(d[dataKey]) / maxValue) * 100;
-            return (
-              <div key={i} className="flex items-center gap-3">
-                {/* GEÄNDERT: Label-Farbe auf Slate-Theme */}
-                <span className="text-xs text-slate-400 w-24 truncate">
-                  {String(d[xAxisKey])}
-                </span>
-                {/* GEÄNDERT: Balken-Hintergrund auf Slate-Theme */}
-                <div className="flex-1 h-6 bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${percentage}%`, backgroundColor: color }}
-                  />
-                </div>
-                {/* GEÄNDERT: Wert-Farbe auf Slate-Theme */}
-                <span className="text-xs text-slate-200 w-20 text-right">
-                  {formatValue(Number(d[dataKey]))}
-                </span>
-              </div>
-            );
-          })}
+      <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+        <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
+        <div className="flex items-center justify-center h-64 text-slate-500">
+          Keine Daten verfügbar
         </div>
-      </ChartWrapper>
+      </div>
     );
   }
 
+  const maxValue = Math.max(...data.map(d => d.value));
+  
+  const padding = { top: 20, right: 20, bottom: 60, left: 80 };
+  const chartWidth = 500;
+  const chartHeight = height;
+  const plotWidth = chartWidth - padding.left - padding.right;
+  const plotHeight = chartHeight - padding.top - padding.bottom;
+  
+  const barHeight = Math.min(40, (plotHeight - (data.length - 1) * 10) / data.length);
+  const barGap = 10;
+
+  // Generate X-axis labels
+  const xLabels = Array.from({ length: 5 }, (_, i) => ({
+    value: Math.round((maxValue * (i + 1)) / 5),
+    x: padding.left + (plotWidth * (i + 1)) / 5
+  }));
+
   return (
-    <ChartWrapper title={title} subtitle={subtitle}>
-      <div className="h-full flex flex-col">
-        <div className="flex-1 flex items-end justify-around gap-2">
-          {data.map((d, i) => {
-            const percentage = (Number(d[dataKey]) / maxValue) * 100;
+    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+      <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
+      
+      <div className="overflow-x-auto">
+        <svg 
+          viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
+          className="w-full min-w-[300px]"
+          style={{ height: `${height}px` }}
+        >
+          {/* Grid lines */}
+          {xLabels.map((label, i) => (
+            <line
+              key={i}
+              x1={label.x}
+              y1={padding.top}
+              x2={label.x}
+              y2={chartHeight - padding.bottom}
+              stroke="#334155"
+              strokeDasharray="4 4"
+            />
+          ))}
+          
+          {/* X-axis labels */}
+          {xLabels.map((label, i) => (
+            <text
+              key={i}
+              x={label.x}
+              y={chartHeight - padding.bottom + 20}
+              textAnchor="middle"
+              className="text-xs fill-slate-500"
+            >
+              {(label.value / 1000).toFixed(0)}k €
+            </text>
+          ))}
+          
+          {/* Bars */}
+          {data.map((item, index) => {
+            const barWidth = (item.value / maxValue) * plotWidth;
+            const y = padding.top + index * (barHeight + barGap);
+            
             return (
-              <div key={i} className="flex flex-col items-center flex-1 group">
-                <div className="relative w-full flex justify-center">
-                  <div
-                    className="w-8 sm:w-12 rounded-t-lg transition-all duration-500 hover:opacity-80"
-                    style={{
-                      height: `${percentage * 2}px`,
-                      backgroundColor: color,
-                      minHeight: "8px",
-                    }}
-                  >
-                    {/* GEÄNDERT: Tooltip-Hintergrund auf Slate-Theme */}
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-950 px-2 py-1 rounded text-xs whitespace-nowrap">
-                      {formatValue(Number(d[dataKey]))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <g key={item.name}>
+                {/* Y-axis label */}
+                <text
+                  x={padding.left - 10}
+                  y={y + barHeight / 2 + 4}
+                  textAnchor="end"
+                  className="text-xs fill-slate-400"
+                >
+                  {item.name}
+                </text>
+                
+                {/* Background bar */}
+                <rect
+                  x={padding.left}
+                  y={y}
+                  width={plotWidth}
+                  height={barHeight}
+                  fill="#1e293b"
+                  rx={4}
+                />
+                
+                {/* Value bar */}
+                <rect
+                  x={padding.left}
+                  y={y}
+                  width={barWidth}
+                  height={barHeight}
+                  fill={item.color}
+                  rx={4}
+                  className="transition-all duration-500"
+                />
+                
+                {/* Value label */}
+                <text
+                  x={padding.left + barWidth + 8}
+                  y={y + barHeight / 2 + 4}
+                  className="text-xs fill-slate-300 font-medium"
+                >
+                  {(item.value / 1000).toFixed(1)}k €
+                </text>
+              </g>
             );
           })}
-        </div>
-        {/* GEÄNDERT: Achsen-Styles auf Slate-Theme */}
-        <div className="flex justify-around mt-3 border-t border-slate-800 pt-3">
-          {data.map((d, i) => (
-            <span
-              key={i}
-              className="text-xs text-slate-400 text-center flex-1 truncate px-1"
-            >
-              {String(d[xAxisKey])}
-            </span>
-          ))}
-        </div>
+        </svg>
       </div>
-    </ChartWrapper>
+    </div>
   );
 }

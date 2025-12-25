@@ -1,65 +1,131 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from 'react';
+import { DateRange } from '@/lib/types';
 
-export function DateRangePicker({ value, onChange }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+interface DateRangePickerProps {
+  dateRange: DateRange;
+  onChange: (range: DateRange) => void;
+}
 
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
+type PresetKey = 'today' | '7days' | '30days' | '90days';
+
+interface Preset {
+  label: string;
+  getDates: () => DateRange;
+}
+
+const presets: Record<PresetKey, Preset> = {
+  today: {
+    label: 'Heute',
+    getDates: () => {
+      const today = new Date();
+      return { startDate: today, endDate: today };
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  },
+  '7days': {
+    label: '7 Tage',
+    getDates: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - 7);
+      return { startDate: start, endDate: end };
+    }
+  },
+  '30days': {
+    label: '30 Tage',
+    getDates: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - 30);
+      return { startDate: start, endDate: end };
+    }
+  },
+  '90days': {
+    label: '90 Tage',
+    getDates: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - 90);
+      return { startDate: start, endDate: end };
+    }
+  }
+};
 
-  const presetRanges = [    { type: "today", label: "Heute" },
-    { type: "last7days", label: "7 Tage" },
-    { type: "last30days", label: "30 Tage" },
-    { type: "last90days", label: "90 Tage" },
-    { type: "thisYear", label: "Jahr" },
-  ];
+function formatDateForInput(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
 
+export function DateRangePicker({ dateRange, onChange }: DateRangePickerProps) {
+  const [activePreset, setActivePreset] = useState<PresetKey | null>('30days');
+  
+  const handlePresetClick = (key: PresetKey) => {
+    setActivePreset(key);
+    onChange(presets[key].getDates());
+  };
+  
+  const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newStart = new Date(e.target.value);
+    if (!isNaN(newStart.getTime())) {
+      setActivePreset(null);
+      onChange({ ...dateRange, startDate: newStart });
+    }
+  };
+  
+  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newEnd = new Date(e.target.value);
+    if (!isNaN(newEnd.getTime())) {
+      setActivePreset(null);
+      onChange({ ...dateRange, endDate: newEnd });
+    }
+  };
+  
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-750 hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-xs"
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-      >
-        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        <span className="text-slate-200">{value.label}</span>
-        <svg className={`w-3 h-3 text-slate-500 transition-transform ${isOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 mt-1.5 w-36 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-20 py-1" role="listbox">
-          {presetRanges.map((range) => (
+    <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+        {/* Presets */}
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(presets) as PresetKey[]).map((key) => (
             <button
-              key={range.type}
-              onClick={() => {
-                onChange(range);
-                setIsOpen(false);
-              }}
-              className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
-                value.type === range.type
-                  ? "bg-indigo-600 text-white"
-                  : "text-slate-300 hover:bg-slate-700"
+              key={key}
+              onClick={() => handlePresetClick(key)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                activePreset === key
+                  ? 'bg-indigo-500 text-white'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
               }`}
-              role="option"
-              aria-selected={value.type === range.type}
             >
-              {range.label}
+              {presets[key].label}
             </button>
           ))}
         </div>
-      )}
+        
+        {/* Divider */}
+        <div className="hidden lg:block w-px h-8 bg-slate-600" />
+        
+        {/* Custom Date Inputs */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-400">Von:</label>
+            <input
+              type="date"
+              value={formatDateForInput(dateRange.startDate)}
+              onChange={handleStartDateChange}
+              className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          
+          <span className="text-slate-500">–</span>
+          
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-400">Bis:</label>
+            <input
+              type="date"
+              value={formatDateForInput(dateRange.endDate)}
+              onChange={handleEndDateChange}
+              className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
