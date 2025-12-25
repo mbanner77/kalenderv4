@@ -3,8 +3,8 @@ export interface KpiData {
   title: string;
   value: number;
   previousValue: number;
-  format: 'number' | 'currency' | 'percentage';
-  icon: 'users' | 'revenue' | 'conversion' | 'orders';
+  format: "number" | "currency" | "percentage";
+  icon: "users" | "revenue" | "conversion" | "orders";
 }
 
 export interface TimeSeriesDataPoint {
