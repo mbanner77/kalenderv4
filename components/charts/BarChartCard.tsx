@@ -1,65 +1,78 @@
-interface BarData {
-  name: string;
-  value: number;
+import { ChartWrapper } from "./ChartWrapper";
+
+interface DataPoint {
+  [key: string]: string | number;
 }
 
 interface BarChartCardProps {
   title: string;
-  data: BarData[];
+  subtitle?: string;
+  data: DataPoint[];
+  dataKey: string;
+  xAxisKey: string;
+  color: string;
+  horizontal?: boolean;
+  formatValue?: (value: number) => string;
 }
 
-const barColors = [
-  "#10b981", // emerald
-  "#3b82f6", // blue
-  "#8b5cf6", // purple
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#06b6d4", // cyan
-];
+export function BarChartCard({ title, subtitle, data, dataKey, xAxisKey, color, horizontal = false, formatValue = (v) => String(v) }: BarChartCardProps) {
+  const values = data.map((d) => Number(d[dataKey]));
+  const maxValue = Math.max(...values);
 
-export function BarChartCard({ title, data }: BarChartCardProps) {
-  const maxValue = Math.max(...data.map(d => d.value), 1);
-  const total = data.reduce((sum, d) => sum + d.value, 0);
+  if (horizontal) {
+    return (
+      <ChartWrapper title={title} subtitle={subtitle}>
+        <div className="h-full flex flex-col justify-between">
+          {data.map((d, i) => {
+            const percentage = (Number(d[dataKey]) / maxValue) * 100;
+            return (
+              <div key={i} className="flex items-center gap-3">
+                <span className="text-xs text-gray-400 w-24 truncate">{String(d[xAxisKey])}</span>
+                <div className="flex-1 h-6 bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${percentage}%`, backgroundColor: color }}
+                  />
+                </div>
+                <span className="text-xs text-gray-300 w-20 text-right">{formatValue(Number(d[dataKey]))}</span>
+              </div>
+            );
+          })}
+        </div>
+      </ChartWrapper>
+    );
+  }
 
   return (
-    <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-5 border border-slate-700">
-      <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
-      
-      <div className="space-y-4">
-        {data.map((item, index) => {
-          const percentage = (item.value / maxValue) * 100;
-          const share = total > 0 ? (item.value / total) * 100 : 0;
-          
-          return (
-            <div key={item.name}>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-sm text-slate-300">{item.name}</span>
-                <span className="text-sm font-medium text-white">
-                  €{item.value.toLocaleString("de-DE")} ({share.toFixed(1)}%)
-                </span>
+    <ChartWrapper title={title} subtitle={subtitle}>
+      <div className="h-full flex flex-col">
+        <div className="flex-1 flex items-end justify-around gap-2">
+          {data.map((d, i) => {
+            const percentage = (Number(d[dataKey]) / maxValue) * 100;
+            return (
+              <div key={i} className="flex flex-col items-center flex-1 group">
+                <div className="relative w-full flex justify-center">
+                  <div
+                    className="w-8 sm:w-12 rounded-t-lg transition-all duration-500 hover:opacity-80"
+                    style={{ height: `${percentage * 2}px`, backgroundColor: color, minHeight: "8px" }}
+                  >
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 px-2 py-1 rounded text-xs whitespace-nowrap">
+                      {formatValue(Number(d[dataKey]))}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{
-                    width: `${percentage}%`,
-                    backgroundColor: barColors[index % barColors.length],
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      
-      <div className="mt-4 pt-4 border-t border-slate-700">
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-slate-400">Gesamt</span>
-          <span className="text-lg font-bold text-white">
-            €{total.toLocaleString("de-DE")}
-          </span>
+            );
+          })}
+        </div>
+        <div className="flex justify-around mt-3 border-t border-gray-700 pt-3">
+          {data.map((d, i) => (
+            <span key={i} className="text-xs text-gray-400 text-center flex-1 truncate px-1">
+              {String(d[xAxisKey])}
+            </span>
+          ))}
         </div>
       </div>
-    </div>
+    </ChartWrapper>
   );
 }

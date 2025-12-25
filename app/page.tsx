@@ -1,163 +1,83 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { DateRangePicker } from "@/components/DateRangePicker";
-import { KpiCard } from "@/components/KpiCard";
+import { DateRangePicker, DateRange } from "@/components/DateRangePicker";
+import { KpiGrid } from "@/components/KpiGrid";
 import { LineChartCard } from "@/components/charts/LineChartCard";
 import { BarChartCard } from "@/components/charts/BarChartCard";
 import { PieChartCard } from "@/components/charts/PieChartCard";
-import {
-  generateMockData,
-  filterDataByDateRange,
-  aggregateByCategory,
-  aggregateBySource,
-} from "@/lib/data";
-import { subDays } from "date-fns"; // GEÄNDERT: Ungenutzte Imports entfernt
+import { getFilteredData, getKpiData, DateRangeType } from "@/lib/data";
 
 export default function Page() {
-  const [dateRange, setDateRange] = useState({
-    start: subDays(new Date(), 30),
-    end: new Date(),
+  const [dateRange, setDateRange] = useState<DateRange>({
+    type: "last30days",
+    label: "Letzte 30 Tage"
   });
 
-  const allData = useMemo(() => generateMockData(), []);
-
-  const filteredData = useMemo(
-    () =>
-      filterDataByDateRange(allData, dateRange.start, dateRange.end),
-    [allData, dateRange]
-  );
-
-  const kpis = useMemo(() => {
-    const totalRevenue = filteredData.reduce((sum, d) => sum + d.revenue, 0);
-    const totalUsers = filteredData.reduce((sum, d) => sum + d.users, 0);
-    const totalOrders = filteredData.reduce((sum, d) => sum + d.orders, 0);
-    const avgConversion =
-      filteredData.length > 0
-        ? filteredData.reduce((sum, d) => sum + d.conversionRate, 0) /
-          filteredData.length
-        : 0;
-
-    return { totalRevenue, totalUsers, totalOrders, avgConversion };
-  }, [filteredData]);
-
-  const categoryData = useMemo(
-    () => aggregateByCategory(filteredData),
-    [filteredData]
-  );
-  const sourceData = useMemo(
-    () => aggregateBySource(filteredData),
-    [filteredData]
-  );
+  const filteredData = useMemo(() => getFilteredData(dateRange.type), [dateRange.type]);
+  const kpiData = useMemo(() => getKpiData(dateRange.type), [dateRange.type]);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"> {/* GEÄNDERT: Vollflächiger, moderner Hintergrund */}
-      {/* GEÄNDERT: Dekorative Glow-Elemente im Hintergrund */}
-      <div className="pointer-events-none absolute inset-0 opacity-60">
-        <div className="absolute -left-32 top-10 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl" />
-        <div className="absolute -right-32 bottom-10 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
-      </div>
-
-      <main className="relative z-10 p-4 md:p-8">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8"> {/* GEÄNDERT: Zentrale, begrenzte Breite */}
-          <header className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            {/* GEÄNDERT: Titelbereich mit Icon-Badge und Meta-Infos */}
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1 text-xs font-medium text-slate-300 shadow-sm shadow-slate-900/60">
-                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-                Live-Übersicht · Mock-Daten
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-2xl ring-1 ring-indigo-500/30 shadow-lg shadow-indigo-900/40">
-                  📊
-                </div>
-                <div>
-                  <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-                    Analytics Dashboard
-                  </h1>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Kompakte Übersicht über Umsatz, Nutzeraktivität und
-                    Performance Ihrer Kanäle.
-                  </p>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* Header */}
+      <header className="border-b border-gray-800 bg-gray-900/95 backdrop-blur sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Analytics Dashboard</h1>
+              <p className="text-gray-400 text-sm mt-1">Übersicht Ihrer wichtigsten Kennzahlen</p>
             </div>
-
-            <div className="w-full max-w-md md:w-auto">
-              <DateRangePicker
-                startDate={dateRange.start}
-                endDate={dateRange.end}
-                onChange={(start, end) => setDateRange({ start, end })}
-              />
-            </div>
-          </header>
-
-          {/* KPI Cards */}
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <KpiCard
-              title="Gesamtumsatz"
-              value={`€${kpis.totalRevenue.toLocaleString("de-DE", {
-                minimumFractionDigits: 2,
-              })}`}
-              icon="💰"
-              trend={12.5}
-              color="emerald"
-            />
-            <KpiCard
-              title="Benutzer"
-              value={kpis.totalUsers.toLocaleString("de-DE")}
-              icon="👥"
-              trend={8.2}
-              color="blue"
-            />
-            <KpiCard
-              title="Bestellungen"
-              value={kpis.totalOrders.toLocaleString("de-DE")}
-              icon="📦"
-              trend={-2.4}
-              color="purple"
-            />
-            <KpiCard
-              title="Conversion Rate"
-              value={`${kpis.avgConversion.toFixed(2)}%`}
-              icon="📈"
-              trend={5.1}
-              color="amber"
-            />
-          </section>
-
-          {/* Charts Grid */}
-          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <LineChartCard
-              title="Umsatzentwicklung"
-              data={filteredData.map((d) => ({
-                date: d.date,
-                value: d.revenue,
-              }))}
-              color="#10b981"
-              valuePrefix="€"
-            />
-            <LineChartCard
-              title="Benutzeraktivität"
-              data={filteredData.map((d) => ({
-                date: d.date,
-                value: d.users,
-              }))}
-              color="#3b82f6"
-            />
-          </section>
-
-          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <BarChartCard
-              title="Umsatz nach Kategorie"
-              data={categoryData}
-            />
-            <PieChartCard
-              title="Traffic-Quellen"
-              data={sourceData}
-            />
-          </section>
+            <DateRangePicker value={dateRange} onChange={setDateRange} />
+          </div>
         </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* KPI Cards */}
+        <section className="mb-8">
+          <KpiGrid data={kpiData} />
+        </section>
+
+        {/* Charts Grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <LineChartCard
+            title="Umsatz über Zeit"
+            subtitle="Täglicher Umsatz im ausgewählten Zeitraum"
+            data={filteredData.revenueOverTime}
+            dataKey="value"
+            xAxisKey="date"
+            color="#6366f1"
+            formatValue={(v) => `€${v.toLocaleString()}`}
+          />
+          <BarChartCard
+            title="Umsatz nach Kategorie"
+            subtitle="Verteilung nach Produktkategorien"
+            data={filteredData.categoryBreakdown}
+            dataKey="value"
+            xAxisKey="category"
+            color="#10b981"
+            formatValue={(v) => `€${v.toLocaleString()}`}
+          />
+        </section>
+
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <PieChartCard
+            title="Traffic-Quellen"
+            subtitle="Besucherverteilung nach Herkunft"
+            data={filteredData.trafficSources}
+          />
+          <BarChartCard
+            title="Top Produkte"
+            subtitle="Meistverkaufte Produkte"
+            data={filteredData.topProducts}
+            dataKey="sales"
+            xAxisKey="name"
+            color="#f59e0b"
+            horizontal
+            formatValue={(v) => `${v} Stück`}
+          />
+        </section>
       </main>
     </div>
   );
