@@ -1,12 +1,13 @@
 "use client";
 
-import Calendar from '@/components/Calendar/Calendar';
+import React from "react";
+import { CalendarProvider } from "@/components/CalendarContext";
+import { CalendarLayout } from "@/components/CalendarLayout";
 
-export default function HomePage() {
+export default function Page() {
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Kalender</h1>
-      <Calendar />
-    </div>
+    <CalendarProvider>
+      <CalendarLayout />
+    </CalendarProvider>
   );
 }
