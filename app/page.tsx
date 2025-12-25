@@ -1,39 +1,146 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getDefaultDateRange, getFilteredData } from "@/lib/mockData";
-import { DateRange } from "@/lib/types";
-import { DateRangePicker } from "@/components/DateRangePicker";
-import { KpiCard } from "@/components/KpiCard";
-import { LineChartCard } from "@/components/charts/LineChartCard";
-import { BarChartCard } from "@/components/charts/BarChartCard";
+import { ViewType } from '../types/calendar';
+import { MONTHS, formatDate, formatWeekRange } from '../lib/dateUtils';
 
-export default function Page() {
-  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange());
-  const [dashboardData, setDashboardData] = useState(() => getFilteredData(getDefaultDateRange()));
+interface CalendarHeaderProps {
+  currentDate: Date;
+  view: ViewType;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  onViewChange: (view: ViewType) => void;
+  onAddEvent: () => void;
+}
 
-  useEffect(() => {
-    setDashboardData(getFilteredData(dateRange));
-  }, [dateRange]);
+export function CalendarHeader({
+  currentDate,
+  view,
+  onPrev,
+  onNext,
+  onToday,
+  onViewChange,
+  onAddEvent
+}: CalendarHeaderProps) {
+  const getTitle = () => {
+    switch (view) {
+      case 'month':
+        return `${MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      case 'week':
+        return formatWeekRange(currentDate);
+      case 'day':
+        return formatDate(currentDate);
+      default:
+        return '';
+    }
+  };
 
   return (
-    <main className="p-8 space-y-6">
-      <section>
-        <DateRangePicker dateRange={dateRange} onChange={setDateRange} />
-      </section>
-
-      <section>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {dashboardData.kpis.map((kpi) => (
-            <KpiCard key={kpi.id} data={kpi} />
-          ))}
+    <header style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '16px 24px',
+      background: '#1e1e2e',
+      borderBottom: '1px solid #313244',
+      flexWrap: 'wrap',
+      gap: '12px'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          onClick={onAddEvent}
+          style={{
+            padding: '10px 20px',
+            background: '#6366f1',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '600',
+            fontSize: '14px'
+          }}
+        >
+          + Neuer Termin
+        </button>
+        
+        <div style={{ display: 'flex', gap: '4px' }}>
+          <button
+            onClick={onPrev}
+            style={{
+              padding: '8px 12px',
+              background: '#313244',
+              color: '#cdd6f4',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            ←
+          </button>
+          <button
+            onClick={onToday}
+            style={{
+              padding: '8px 16px',
+              background: '#313244',
+              color: '#cdd6f4',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            Heute
+          </button>
+          <button
+            onClick={onNext}
+            style={{
+              padding: '8px 12px',
+              background: '#313244',
+              color: '#cdd6f4',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            →
+          </button>
         </div>
-      </section>
+      </div>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <LineChartCard title="Verlauf" data={dashboardData.lineChartData} />
-        <BarChartCard title="Umsatzverteilung" data={dashboardData.barChartData} />
-      </section>
-    </main>
+      <h1 style={{
+        fontSize: '20px',
+        fontWeight: '600',
+        color: '#cdd6f4',
+        margin: 0
+      }}>
+        {getTitle()}
+      </h1>
+
+      <div style={{
+        display: 'flex',
+        background: '#313244',
+        borderRadius: '8px',
+        overflow: 'hidden'
+      }}>
+        {(['month', 'week', 'day'] as ViewType[]).map((v) => (
+          <button
+            key={v}
+            onClick={() => onViewChange(v)}
+            style={{
+              padding: '8px 16px',
+              background: view === v ? '#6366f1' : 'transparent',
+              color: view === v ? '#fff' : '#cdd6f4',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '14px',
+              transition: 'all 0.2s'
+            }}
+          >
+            {v === 'month' ? 'Monat' : v === 'week' ? 'Woche' : 'Tag'}
+          </button>
+        ))}
+      </div>
+    </header>
   );
 }
+
+export default CalendarHeader;
