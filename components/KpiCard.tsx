@@ -18,7 +18,7 @@ export function KpiCard({ title, value, change, changeLabel, icon, color }: KpiC
   const isPositive = change >= 0;
 
   return (
-    <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-colors">
+    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-slate-600 transition-colors">
       <div className="flex items-start justify-between">
         <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
           {icon}
@@ -31,9 +31,9 @@ export function KpiCard({ title, value, change, changeLabel, icon, color }: KpiC
         </div>
       </div>
       <div className="mt-4">
-        <h3 className="text-gray-400 text-sm font-medium">{title}</h3>
-        <p className="text-2xl font-bold text-white mt-1">{value}</p>
-        <p className="text-gray-500 text-xs mt-1">{changeLabel}</p>
+        <h3 className="text-slate-400 text-sm font-medium">{title}</h3>
+        <p className="text-2xl font-bold text-slate-50 mt-1">{value}</p>
+        <p className="text-slate-500 text-xs mt-1">{changeLabel}</p>
       </div>
     </div>
   );
