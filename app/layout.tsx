@@ -1,3 +1,5 @@
+// GEÄNDERT: Globale Styles & Tailwind-Basis importiert
+
 export default function RootLayout({
   children,
 }: {
@@ -5,7 +7,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="de">
-      <body className="bg-slate-900 text-white min-h-screen">
+      <body className="min-h-screen bg-slate-950 text-slate-100 antialiased"> {/* GEÄNDERT: Modernere Grundoptik */}
         {children}
       </body>
     </html>
