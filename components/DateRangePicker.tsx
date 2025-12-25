@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import type { DateRangeType } from "@/lib/data";
+import type { DateRangeType } from "../lib/data";
 
 export interface DateRange {
   type: DateRangeType;
@@ -13,12 +13,12 @@ interface DateRangePickerProps {
   onChange: (range: DateRange) => void;
 }
 
-const presetRanges = [
-  { type: "today" as const, label: "Heute" },
-  { type: "last7days" as const, label: "7 Tage" },
-  { type: "last30days" as const, label: "30 Tage" },
-  { type: "last90days" as const, label: "90 Tage" },
-  { type: "thisYear" as const, label: "Jahr" },
+const presetRanges: DateRange[] = [
+  { type: "today", label: "Heute" },
+  { type: "last7days", label: "7 Tage" },
+  { type: "last30days", label: "30 Tage" },
+  { type: "last90days", label: "90 Tage" },
+  { type: "thisYear", label: "Jahr" },
 ];
 
 export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
@@ -37,7 +37,6 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* GEÄNDERT: Kompakterer Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-lg hover:bg-slate-750 hover:border-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-xs"

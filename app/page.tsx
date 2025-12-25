@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useMemo } from "react";
 import { DateRangePicker } from "@/components/DateRangePicker";
 import { KpiGrid } from "@/components/KpiGrid";

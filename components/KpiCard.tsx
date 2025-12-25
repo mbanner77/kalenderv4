@@ -1,9 +1,11 @@
+import { ReactNode } from "react";
+
 interface KpiCardProps {
   title: string;
   value: string;
   change: number;
   changeLabel: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   color: "indigo" | "green" | "amber" | "rose";
 }
 
@@ -18,7 +20,6 @@ export function KpiCard({ title, value, change, changeLabel, icon, color }: KpiC
   const isPositive = change >= 0;
 
   return (
-    // GEÄNDERT: Kompaktere Karte
     <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 hover:border-slate-600 transition-colors">
       <div className="flex items-start justify-between">
         <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
