@@ -1,81 +1,87 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { CalendarEvent, ViewType } from "@/types/event";
+import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  color: string;
+}
+
+export type ViewMode = "month" | "week" | "day";
 
 interface CalendarContextType {
   events: CalendarEvent[];
   currentDate: Date;
-  view: ViewType;
-  selectedEvent: CalendarEvent | null;
-  isModalOpen: boolean;
-  modalDate: Date | null;
+  viewMode: ViewMode;
   addEvent: (event: Omit<CalendarEvent, "id">) => void;
-  updateEvent: (event: CalendarEvent) => void;
   deleteEvent: (id: string) => void;
-  moveEvent: (id: string, newStart: Date, newEnd: Date) => void;
+  moveEvent: (id: string, newStart: Date) => void;
   setCurrentDate: (date: Date) => void;
-  setView: (view: ViewType) => void;
-  openModal: (date?: Date, event?: CalendarEvent) => void;
-  closeModal: () => void;
-  goToToday: () => void;
-  goToPrevious: () => void;
-  goToNext: () => void;
+  setViewMode: (mode: ViewMode) => void;
+  navigatePrev: () => void;
+  navigateNext: () => void;
+  navigateToday: () => void;
 }
 
 const CalendarContext = createContext<CalendarContextType | null>(null);
 
 export function useCalendar() {
   const context = useContext(CalendarContext);
-  if (!context) throw new Error("useCalendar must be used within CalendarProvider");
+  if (!context) {
+    throw new Error("useCalendar must be used within CalendarProvider");
+  }
   return context;
 }
 
-const STORAGE_KEY = "calendar-events";
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
 
-const defaultEvents: CalendarEvent[] = [
+function addMonths(date: Date, months: number): Date {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+}
+
+function startOfDay(date: Date): Date {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
+
+const INITIAL_EVENTS: CalendarEvent[] = [
   {
     id: "1",
     title: "Team Meeting",
-    start: new Date(Date.now() + 86400000).toISOString(),
-    end: new Date(Date.now() + 86400000 + 3600000).toISOString(),
+    start: new Date(new Date().setHours(10, 0, 0, 0)),
+    end: new Date(new Date().setHours(11, 30, 0, 0)),
     color: "#6366f1",
   },
   {
     id: "2",
-    title: "Projektbesprechung",
-    start: new Date(Date.now() + 172800000).toISOString(),
-    end: new Date(Date.now() + 172800000 + 7200000).toISOString(),
-    color: "#10b981",
+    title: "Code Review",
+    start: new Date(addDays(new Date(), 1).setHours(14, 0, 0, 0)),
+    end: new Date(addDays(new Date(), 1).setHours(15, 0, 0, 0)),
+    color: "#22c55e",
+  },
+  {
+    id: "3",
+    title: "Projektplanung",
+    start: new Date(addDays(new Date(), 2).setHours(9, 0, 0, 0)),
+    end: new Date(addDays(new Date(), 2).setHours(12, 0, 0, 0)),
+    color: "#f59e0b",
   },
 ];
 
 export function CalendarProvider({ children }: { children: ReactNode }) {
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>(INITIAL_EVENTS);
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [view, setView] = useState<ViewType>("month");
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalDate, setModalDate] = useState<Date | null>(null);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setEvents(JSON.parse(stored));
-      } catch {
-        setEvents(defaultEvents);
-      }
-    } else {
-      setEvents(defaultEvents);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (events.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-    }
-  }, [events]);
+  const [viewMode, setViewMode] = useState<ViewMode>("month");
 
   const addEvent = useCallback((event: Omit<CalendarEvent, "id">) => {
     const newEvent: CalendarEvent = {
@@ -85,88 +91,69 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
     setEvents((prev) => [...prev, newEvent]);
   }, []);
 
-  const updateEvent = useCallback((event: CalendarEvent) => {
-    setEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)));
-  }, []);
-
   const deleteEvent = useCallback((id: string) => {
     setEvents((prev) => prev.filter((e) => e.id !== id));
   }, []);
 
-  const moveEvent = useCallback((id: string, newStart: Date, newEnd: Date) => {
+  const moveEvent = useCallback((id: string, newStart: Date) => {
     setEvents((prev) =>
-      prev.map((e) =>
-        e.id === id
-          ? { ...e, start: newStart.toISOString(), end: newEnd.toISOString() }
-          : e
-      )
+      prev.map((event) => {
+        if (event.id !== id) return event;
+
+        const duration = event.end.getTime() - event.start.getTime();
+        const newEnd = new Date(newStart.getTime() + duration);
+
+        return {
+          ...event,
+          start: newStart,
+          end: newEnd,
+        };
+      })
     );
   }, []);
 
-  const openModal = useCallback((date?: Date, event?: CalendarEvent) => {
-    setModalDate(date || new Date());
-    setSelectedEvent(event || null);
-    setIsModalOpen(true);
-  }, []);
+  const navigatePrev = useCallback(() => {
+    setCurrentDate((prev) => {
+      if (viewMode === "month") {
+        return addMonths(prev, -1);
+      } else if (viewMode === "week") {
+        return addDays(prev, -7);
+      } else {
+        return addDays(prev, -1);
+      }
+    });
+  }, [viewMode]);
 
-  const closeModal = useCallback(() => {
-    setIsModalOpen(false);
-    setSelectedEvent(null);
-    setModalDate(null);
-  }, []);
+  const navigateNext = useCallback(() => {
+    setCurrentDate((prev) => {
+      if (viewMode === "month") {
+        return addMonths(prev, 1);
+      } else if (viewMode === "week") {
+        return addDays(prev, 7);
+      } else {
+        return addDays(prev, 1);
+      }
+    });
+  }, [viewMode]);
 
-  const goToToday = useCallback(() => {
+  const navigateToday = useCallback(() => {
     setCurrentDate(new Date());
   }, []);
-
-  const goToPrevious = useCallback(() => {
-    setCurrentDate((prev) => {
-      const d = new Date(prev);
-      if (view === "month") {
-        d.setMonth(d.getMonth() - 1);
-      } else if (view === "week") {
-        d.setDate(d.getDate() - 7);
-      } else {
-        d.setDate(d.getDate() - 1);
-      }
-      return d;
-    });
-  }, [view]);
-
-  const goToNext = useCallback(() => {
-    setCurrentDate((prev) => {
-      const d = new Date(prev);
-      if (view === "month") {
-        d.setMonth(d.getMonth() + 1);
-      } else if (view === "week") {
-        d.setDate(d.getDate() + 7);
-      } else {
-        d.setDate(d.getDate() + 1);
-      }
-      return d;
-    });
-  }, [view]);
 
   return (
     <CalendarContext.Provider
       value={{
         events,
         currentDate,
-        view,
-        selectedEvent,
-        isModalOpen,
-        modalDate,
+        viewMode,
         addEvent,
-        updateEvent,
         deleteEvent,
         moveEvent,
         setCurrentDate,
-        setView,
-        openModal,
-        closeModal,
-        goToToday,
-        goToPrevious,
-        goToNext,
+        setViewMode,
+        navigatePrev,
+        navigateNext,
+        navigateToday,
       }}
     >
       {children}

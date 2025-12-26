@@ -1,66 +1,106 @@
 "use client";
 
-import { useCalendar } from "@/components/CalendarContext";
+import { useCalendar, ViewMode } from "@/components/CalendarContext";
 
-const monthNames = [
-  "Januar", "Februar", "März", "April", "Mai", "Juni",
-  "Juli", "August", "September", "Oktober", "November", "Dezember"
-];
+function formatMonthYear(date: Date): string {
+  return date.toLocaleDateString("de-DE", {
+    month: "long",
+    year: "numeric",
+  });
+}
 
-const dayNames = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"];
+function formatWeekRange(date: Date): string {
+  const dayOfWeek = (date.getDay() + 6) % 7;
+  const monday = new Date(date);
+  monday.setDate(date.getDate() - dayOfWeek);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const formatShort = (d: Date) =>
+    d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+
+  return `${formatShort(monday)} - ${formatShort(sunday)}`;
+}
+
+function formatDay(date: Date): string {
+  return date.toLocaleDateString("de-DE", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
 
 export function CalendarHeader() {
-  const { currentDate, view, goToToday, goToPrevious, goToNext } = useCalendar();
+  const {
+    currentDate,
+    viewMode,
+    setViewMode,
+    navigatePrev,
+    navigateNext,
+    navigateToday,
+  } = useCalendar();
 
-  const formatTitle = () => {
-    if (view === "month") {
-      return `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-    } else if (view === "week") {
-      const startOfWeek = new Date(currentDate);
-      const day = startOfWeek.getDay();
-      startOfWeek.setDate(startOfWeek.getDate() - day + 1);
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(endOfWeek.getDate() + 6);
-      
-      if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
-        return `${startOfWeek.getDate()}. - ${endOfWeek.getDate()}. ${monthNames[startOfWeek.getMonth()]} ${startOfWeek.getFullYear()}`;
-      }
-      return `${startOfWeek.getDate()}. ${monthNames[startOfWeek.getMonth()]} - ${endOfWeek.getDate()}. ${monthNames[endOfWeek.getMonth()]} ${endOfWeek.getFullYear()}`;
-    } else {
-      return `${dayNames[currentDate.getDay()]}, ${currentDate.getDate()}. ${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+  const getTitle = (): string => {
+    switch (viewMode) {
+      case "month":
+        return formatMonthYear(currentDate);
+      case "week":
+        return formatWeekRange(currentDate);
+      case "day":
+        return formatDay(currentDate);
+      default:
+        return "";
     }
   };
 
+  const viewButtons: { mode: ViewMode; label: string }[] = [
+    { mode: "month", label: "Monat" },
+    { mode: "week", label: "Woche" },
+    { mode: "day", label: "Tag" },
+  ];
+
   return (
-    <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <div className="flex items-center gap-2">
         <button
-          onClick={goToToday}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors"
+          onClick={navigatePrev}
+          className="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors text-lg font-bold"
+          aria-label="Zurück"
+        >
+          ‹
+        </button>
+        <button
+          onClick={navigateToday}
+          className="px-4 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors text-sm font-medium"
         >
           Heute
         </button>
-        <div className="flex items-center">
-          <button
-            onClick={goToPrevious}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <button
-            onClick={goToNext}
-            className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
+        <button
+          onClick={navigateNext}
+          className="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors text-lg font-bold"
+          aria-label="Weiter"
+        >
+          ›
+        </button>
+        <h2 className="ml-4 text-xl font-semibold">{getTitle()}</h2>
       </div>
-      <h2 className="text-xl font-bold">{formatTitle()}</h2>
-      <div className="w-32"></div>
+
+      <div className="flex gap-1 bg-gray-700 p-1 rounded-lg">
+        {viewButtons.map(({ mode, label }) => (
+          <button
+            key={mode}
+            onClick={() => setViewMode(mode)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              viewMode === mode
+                ? "bg-indigo-600 text-white"
+                : "text-gray-300 hover:text-white hover:bg-gray-600"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
