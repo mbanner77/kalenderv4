@@ -1,108 +1,84 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect } from "react";
 import { useCalendar } from "@/components/CalendarContext";
 
-const EVENT_COLORS = [
-  { name: "Blau", value: "#3b82f6" },
-  { name: "Grün", value: "#10b981" },
-  { name: "Orange", value: "#f59e0b" },
-  { name: "Rot", value: "#ef4444" },
-  { name: "Lila", value: "#8b5cf6" },
-  { name: "Pink", value: "#ec4899" },
-  { name: "Cyan", value: "#06b6d4" },
+const colors = [
+  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
+  "#f97316", "#eab308", "#22c55e", "#10b981",
+  "#14b8a6", "#06b6d4", "#3b82f6", "#64748b",
 ];
-
-function formatDateForInput(date: Date): string {
-  return date.toISOString().slice(0, 16);
-}
 
 export function EventModal() {
   const {
     isModalOpen,
-    modalMode,
+    closeModal,
     selectedEvent,
-    defaultEventStart,
+    modalDate,
     addEvent,
     updateEvent,
     deleteEvent,
-    closeModal,
   } = useCalendar();
 
   const [title, setTitle] = useState("");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-  const [allDay, setAllDay] = useState(false);
   const [description, setDescription] = useState("");
-  const [color, setColor] = useState("#3b82f6");
-  const [location, setLocation] = useState("");
-  const [error, setError] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [color, setColor] = useState(colors[0]);
+  const [allDay, setAllDay] = useState(false);
 
   useEffect(() => {
-    if (!isModalOpen) return;
-
-    if (modalMode === "edit" && selectedEvent) {
+    if (selectedEvent) {
       setTitle(selectedEvent.title);
-      setStart(formatDateForInput(selectedEvent.start));
-      setEnd(formatDateForInput(selectedEvent.end));
-      setAllDay(selectedEvent.allDay);
-      setDescription(selectedEvent.description);
-      setColor(selectedEvent.color);
-      setLocation(selectedEvent.location);
-    } else {
-      const baseStart = defaultEventStart || new Date();
-      const baseEnd = new Date(baseStart.getTime() + 60 * 60 * 1000);
-
+      setDescription(selectedEvent.description || "");
+      const start = new Date(selectedEvent.start);
+      const end = new Date(selectedEvent.end);
+      setStartDate(start.toISOString().split("T")[0]);
+      setStartTime(start.toTimeString().slice(0, 5));
+      setEndDate(end.toISOString().split("T")[0]);
+      setEndTime(end.toTimeString().slice(0, 5));
+      setColor(selectedEvent.color || colors[0]);
+      setAllDay(selectedEvent.allDay || false);
+    } else if (modalDate) {
+      const date = new Date(modalDate);
       setTitle("");
-      setStart(formatDateForInput(baseStart));
-      setEnd(formatDateForInput(baseEnd));
-      setAllDay(false);
       setDescription("");
-      setColor("#3b82f6");
-      setLocation("");
+      setStartDate(date.toISOString().split("T")[0]);
+      setStartTime(date.toTimeString().slice(0, 5));
+      const endDateObj = new Date(date);
+      endDateObj.setHours(endDateObj.getHours() + 1);
+      setEndDate(endDateObj.toISOString().split("T")[0]);
+      setEndTime(endDateObj.toTimeString().slice(0, 5));
+      setColor(colors[0]);
+      setAllDay(false);
     }
+  }, [selectedEvent, modalDate]);
 
-    setError("");
-  }, [isModalOpen, modalMode, selectedEvent, defaultEventStart]);
-
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim()) return;
 
-    if (!title.trim()) {
-      setError("Titel ist erforderlich");
-      return;
-    }
+    const start = new Date(`${startDate}T${allDay ? "00:00" : startTime}`);
+    const end = new Date(`${endDate}T${allDay ? "23:59" : endTime}`);
 
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-
-    if (!(startDate instanceof Date) || Number.isNaN(startDate.getTime())) {
-      setError("Ungültiges Startdatum");
-      return;
-    }
-
-    if (!(endDate instanceof Date) || Number.isNaN(endDate.getTime())) {
-      setError("Ungültiges Enddatum");
-      return;
-    }
-
-    if (startDate >= endDate) {
-      setError("Endzeit muss nach Startzeit liegen");
+    if (end <= start) {
+      alert("Endzeit muss nach Startzeit liegen");
       return;
     }
 
     const eventData = {
       title: title.trim(),
-      start: startDate,
-      end: endDate,
-      allDay,
-      description: description.trim(),
+      description: description.trim() || undefined,
+      start: start.toISOString(),
+      end: end.toISOString(),
       color,
-      location: location.trim(),
+      allDay,
     };
 
-    if (modalMode === "edit" && selectedEvent) {
-      updateEvent(selectedEvent.id, eventData);
+    if (selectedEvent) {
+      updateEvent({ ...eventData, id: selectedEvent.id });
     } else {
       addEvent(eventData);
     }
@@ -111,7 +87,7 @@ export function EventModal() {
   };
 
   const handleDelete = () => {
-    if (selectedEvent && window.confirm("Event wirklich löschen?")) {
+    if (selectedEvent && confirm("Event wirklich löschen?")) {
       deleteEvent(selectedEvent.id);
       closeModal();
     }
@@ -120,177 +96,165 @@ export function EventModal() {
   if (!isModalOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-      onClick={closeModal}
-    >
-      <div
-        className="bg-slate-800 rounded-xl shadow-2xl w-full max-w-md max-height-[90vh] max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-      >
-        <div className="p-6">
-          <h2 id="modal-title" className="text-xl font-bold text-white mb-4">
-            {modalMode === "edit" ? "Event bearbeiten" : "Neues Event"}
-          </h2>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+          <h3 className="text-lg font-semibold">
+            {selectedEvent ? "Event bearbeiten" : "Neues Event"}
+          </h3>
+          <button
+            onClick={closeModal}
+            className="p-1 hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-500/20 border border-red-500 text-red-300 px-3 py-2 rounded-lg text-sm">
-                {error}
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Titel *
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="Event-Titel"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Beschreibung
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+              rows={2}
+              placeholder="Optionale Beschreibung"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="allDay"
+              checked={allDay}
+              onChange={(e) => setAllDay(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-indigo-600 focus:ring-indigo-500"
+            />
+            <label htmlFor="allDay" className="text-sm text-gray-400">
+              Ganztägig
+            </label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">
+                Startdatum
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                required
+              />
+            </div>
+            {!allDay && (
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">
+                  Startzeit
+                </label>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  required
+                />
               </div>
             )}
+          </div>
 
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label
-                htmlFor="title"
-                className="block text-sm font-medium text-slate-300 mb-1"
-              >
-                Titel *
+              <label className="block text-sm font-medium text-gray-400 mb-1">
+                Enddatum
               </label>
               <input
-                id="title"
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Event-Titel"
-                autoFocus
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                required
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
+            {!allDay && (
               <div>
-                <label
-                  htmlFor="start"
-                  className="block text-sm font-medium text-slate-300 mb-1"
-                >
-                  Start
+                <label className="block text-sm font-medium text-gray-400 mb-1">
+                  Endzeit
                 </label>
                 <input
-                  id="start"
-                  type="datetime-local"
-                  value={start}
-                  onChange={(e) => setStart(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  required
                 />
               </div>
-              <div>
-                <label
-                  htmlFor="end"
-                  className="block text-sm font-medium text-slate-300 mb-1"
-                >
-                  Ende
-                </label>
-                <input
-                  id="end"
-                  type="datetime-local"
-                  value={end}
-                  onChange={(e) => setEnd(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
+            )}
+          </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                id="allDay"
-                type="checkbox"
-                checked={allDay}
-                onChange={(e) => setAllDay(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-blue-500"
-              />
-              <label htmlFor="allDay" className="text-sm text-slate-300">
-                Ganztägig
-              </label>
-            </div>
-
-            <div>
-              <label
-                htmlFor="location"
-                className="block text-sm font-medium text-slate-300 mb-1"
-              >
-                Ort
-              </label>
-              <input
-                id="location"
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ort eingeben"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-slate-300 mb-1"
-              >
-                Beschreibung
-              </label>
-              <textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                placeholder="Beschreibung hinzufügen"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Farbe
-              </label>
-              <div className="flex gap-2 flex-wrap">
-                {EVENT_COLORS.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setColor(c.value)}
-                    className={`w-8 h-8 rounded-full transition-transform ${
-                      color === c.value
-                        ? "ring-2 ring-white ring-offset-2 ring-offset-slate-800 scale-110"
-                        : ""
-                    }`}
-                    style={{ backgroundColor: c.value }}
-                    title={c.name}
-                    aria-label={`Farbe ${c.name}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              {modalMode === "edit" && selectedEvent && (
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Farbe
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {colors.map((c) => (
                 <button
+                  key={c}
                   type="button"
-                  onClick={handleDelete}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                >
-                  Löschen
-                </button>
-              )}
-              <div className="flex-1" />
+                  onClick={() => setColor(c)}
+                  className={`w-8 h-8 rounded-full transition-transform ${
+                    color === c ? "ring-2 ring-white ring-offset-2 ring-offset-gray-800 scale-110" : ""
+                  }`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            {selectedEvent && (
               <button
                 type="button"
-                onClick={closeModal}
-                className="px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors"
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors"
               >
-                Abbrechen
+                Löschen
               </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-              >
-                {modalMode === "edit" ? "Speichern" : "Erstellen"}
-              </button>
-            </div>
-          </form>
-        </div>
+            )}
+            <button
+              type="button"
+              onClick={closeModal}
+              className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-medium transition-colors"
+            >
+              Abbrechen
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-sm font-medium transition-colors"
+            >
+              {selectedEvent ? "Speichern" : "Erstellen"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
